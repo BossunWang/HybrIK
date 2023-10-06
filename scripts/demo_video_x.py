@@ -2,6 +2,7 @@
 import argparse
 import os
 import sys
+import time
 
 sys.path.append("/home/bossun/Projects/3rd_party/HybrIK")
 
@@ -283,8 +284,10 @@ for img_path in tqdm(img_path_list):
     basename = os.path.basename(img_path)
 
     with torch.no_grad():
+        detection_start_time = time.time()
         # Run Detection
         input_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+        print('input_image shape:', input_image.shape)
         det_input = det_transform(input_image).to(opt.gpu)
         det_output = det_model([det_input])[0]
 
@@ -344,6 +347,8 @@ for img_path in tqdm(img_path_list):
         # uv_jts[25:55, :2] = hand_uv_jts
         # uv_jts[-10:, :2] = hand_leaf_uv_jts
         transl = pose_output.transl.detach()
+
+        print("detection_time:", time.time() - detection_start_time)
 
         # Visualization
         image = input_image.copy()
