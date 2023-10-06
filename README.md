@@ -86,7 +86,7 @@ conda install pytorch==1.9.1 torchvision==0.10.1 -c pytorch
 # 3. Install PyTorch3D (Optional, only for visualization)
 conda install -c fvcore -c iopath -c conda-forge fvcore iopath
 conda install -c bottler nvidiacub
-pip install git+ssh://git@github.com/facebookresearch/pytorch3d.git@stable
+conda install pytorch3d -c pytorch3d
 
 # 4. Pull our code
 git clone https://github.com/Jeff-sjtu/HybrIK.git

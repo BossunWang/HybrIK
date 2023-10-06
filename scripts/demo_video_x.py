@@ -1,6 +1,9 @@
 """Image demo script."""
 import argparse
 import os
+import sys
+
+sys.path.append("/home/bossun/Projects/3rd_party/HybrIK")
 
 import cv2
 import numpy as np
@@ -14,6 +17,7 @@ from hybrik.utils.vis import get_max_iou_box, get_one_box, vis_2d
 from torchvision import transforms as T
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from tqdm import tqdm
+import subprocess
 
 
 det_transform = T.Compose([T.ToTensor()])
@@ -220,17 +224,17 @@ if not os.path.exists(os.path.join(opt.out_dir, 'res_2d_images')) and opt.save_i
     os.makedirs(os.path.join(opt.out_dir, 'res_2d_images'))
 
 _, info, _ = get_video_info(opt.video_name)
-video_basename = os.path.basename(opt.video_name).split('.')[0]
+video_basename = os.path.splitext(os.path.basename(opt.video_name))[0]
+# video_basename = os.path.basename(opt.video_name).split('.')[0]
 
 savepath = f'./{opt.out_dir}/res_{video_basename}.mp4'
 savepath2d = f'./{opt.out_dir}/res_2d_{video_basename}.mp4'
 info['savepath'] = savepath
 info['savepath2d'] = savepath2d
 
-write_stream = cv2.VideoWriter(
-    *[info[k] for k in ['savepath', 'fourcc', 'fps', 'frameSize']])
-write2d_stream = cv2.VideoWriter(
-    *[info[k] for k in ['savepath2d', 'fourcc', 'fps', 'frameSize']])
+fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+write_stream = cv2.VideoWriter(info['savepath'], fourcc, info['fps'], info['frameSize'])
+write2d_stream = cv2.VideoWriter(info['savepath2d'], fourcc, info['fps'], info['frameSize'])
 if not write_stream.isOpened():
     print("Try to use other video encoders...")
     ext = info['savepath'].split('.')[-1]
@@ -246,7 +250,15 @@ if not write_stream.isOpened():
 assert write_stream.isOpened(), 'Cannot open video for writing'
 assert write2d_stream.isOpened(), 'Cannot open video for writing'
 
-os.system(f'ffmpeg -i {opt.video_name} {opt.out_dir}/raw_images/{video_basename}-%06d.png')
+# os.system(f'ffmpeg -i {opt.video_name} {opt.out_dir}/raw_images/{video_basename}-%06d.png')
+
+command = ['ffmpeg',
+           '-i', opt.video_name,
+           '-f', 'image2',
+           '-v', 'error',
+           f'{opt.out_dir}/raw_images/{video_basename}-%06d.png']
+
+subprocess.call(command)
 
 
 files = os.listdir(f'{opt.out_dir}/raw_images')
@@ -369,7 +381,7 @@ for img_path in tqdm(img_path_list):
             res_path = os.path.join(opt.out_dir, 'res_images', f'image-{idx:06d}.jpg')
             cv2.imwrite(res_path, image_vis)
         write_stream.write(image_vis)
-        '''
+
         # vis 2d
         pts = uv_jts * bbox_xywh[2]
         pts[:, 0] = pts[:, 0] + bbox_xywh[0]
@@ -388,30 +400,30 @@ for img_path in tqdm(img_path_list):
         if opt.save_pt:
             assert pose_input.shape[0] == 1, 'Only support single batch inference for now'
 
-            pred_xyz_jts_17 = pose_output.pred_xyz_jts_17.reshape(
-                17, 3).cpu().data.numpy()
-            pred_uvd_jts = pose_output.pred_uvd_jts.reshape(
-                -1, 3).cpu().data.numpy()
-            pred_xyz_jts_29 = pose_output.pred_xyz_jts_29.reshape(
-                -1, 3).cpu().data.numpy()
-            pred_xyz_jts_24_struct = pose_output.pred_xyz_jts_24_struct.reshape(
-                24, 3).cpu().data.numpy()
+            # pred_xyz_jts_17 = pose_output.pred_xyz_jts_17.reshape(
+            #     17, 3).cpu().data.numpy()
+            # pred_uvd_jts = pose_output.pred_uvd_jts.reshape(
+            #     -1, 3).cpu().data.numpy()
+            # pred_xyz_jts_29 = pose_output.pred_xyz_jts_29.reshape(
+            #     -1, 3).cpu().data.numpy()
+            # pred_xyz_jts_24_struct = pose_output.pred_xyz_jts_24_struct.reshape(
+            #     24, 3).cpu().data.numpy()
             pred_scores = pose_output.maxvals.cpu(
             ).data[:, :29].reshape(29).numpy()
             pred_camera = pose_output.pred_camera.squeeze(
                 dim=0).cpu().data.numpy()
-            pred_betas = pose_output.pred_shape.squeeze(
+            pred_betas = pose_output.pred_beta.squeeze(
                 dim=0).cpu().data.numpy()
-            pred_theta = pose_output.pred_theta_mats.squeeze(
+            pred_theta = pose_output.pred_theta_mat.squeeze(
                 dim=0).cpu().data.numpy()
             pred_phi = pose_output.pred_phi.squeeze(dim=0).cpu().data.numpy()
             pred_cam_root = pose_output.cam_root.squeeze(dim=0).cpu().numpy()
             img_size = np.array((input_image.shape[0], input_image.shape[1]))
 
-            res_db['pred_xyz_17'].append(pred_xyz_jts_17)
-            res_db['pred_uvd'].append(pred_uvd_jts)
-            res_db['pred_xyz_29'].append(pred_xyz_jts_29)
-            res_db['pred_xyz_24_struct'].append(pred_xyz_jts_24_struct)
+            # res_db['pred_xyz_17'].append(pred_xyz_jts_17)
+            # res_db['pred_uvd'].append(pred_uvd_jts)
+            # res_db['pred_xyz_29'].append(pred_xyz_jts_29)
+            # res_db['pred_xyz_24_struct'].append(pred_xyz_jts_24_struct)
             res_db['pred_scores'].append(pred_scores)
             res_db['pred_camera'].append(pred_camera)
             res_db['f'].append(1000.0)
@@ -425,7 +437,7 @@ for img_path in tqdm(img_path_list):
             res_db['height'].append(img_size[0])
             res_db['width'].append(img_size[1])
             res_db['img_path'].append(img_path)
-        '''
+
 
 write_stream.release()
 write2d_stream.release()
