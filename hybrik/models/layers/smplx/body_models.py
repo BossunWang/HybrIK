@@ -1077,7 +1077,7 @@ class SMPLXLayer(SMPLX):
         'right_middle1', 'right_middle2', 'right_middle3',  # 45
         'right_pinky1', 'right_pinky2', 'right_pinky3',     # 48
         'right_ring1', 'right_ring2', 'right_ring3',        # 51
-        'right_thumb1', 'right_thumb2', 'right_thumb3',     # 54
+        'right_thumb1', 'right_thumb2', 'right_thumb3',     # 54   Rot matrix output to this index
         # leaf joints
         'LBigToe', 'RBigToe',                   # 56
         'mouth_bottom',                                 # 57

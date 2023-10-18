@@ -6,6 +6,8 @@ import time
 
 sys.path.append("/home/bossun/Projects/3rd_party/HybrIK")
 
+import matplotlib.pyplot as plt
+plt.figure()
 import cv2
 import numpy as np
 import torch
@@ -19,7 +21,6 @@ from torchvision import transforms as T
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from tqdm import tqdm
 import subprocess
-
 
 det_transform = T.Compose([T.ToTensor()])
 
@@ -279,6 +280,10 @@ smplx_faces = torch.from_numpy(hybrik_model.smplx_layer.faces.astype(np.int32))
 
 print('### Run Model...')
 idx = 0
+pred_xyz_full_list = []
+cam_root_list = []
+transl_list = []
+
 for img_path in tqdm(img_path_list):
     dirname = os.path.dirname(img_path)
     basename = os.path.basename(img_path)
@@ -358,6 +363,13 @@ for img_path in tqdm(img_path_list):
         focal = focal / 256 * bbox_xywh[2]
 
         vertices = pose_output.pred_vertices.detach()
+
+        pred_xyz_full = pose_output.pred_xyz_full.reshape(-1, 127, 3)
+        # pred_xyz_full = (pose_output.pred_xyz_full * 2.2).reshape(-1, 127, 3)
+        # pred_xyz_full = pred_xyz_full + transl[:, None, :]
+        pred_xyz_full_list.append(pred_xyz_full[0, :55, :].cpu().detach().numpy())
+        cam_root_list.append(pose_output.cam_root.cpu().detach().numpy())
+        transl_list.append(transl.cpu().detach().numpy())
 
         verts_batch = vertices
         transl_batch = transl
@@ -443,6 +455,13 @@ for img_path in tqdm(img_path_list):
             res_db['width'].append(img_size[1])
             res_db['img_path'].append(img_path)
 
+    # if idx > 100:
+    #     break
+
+# render 3d
+np.save(os.path.join(opt.out_dir, 'pose_data.npy'), np.array(pred_xyz_full_list))
+np.save(os.path.join(opt.out_dir, 'cam_data.npy'), np.array(cam_root_list))
+np.save(os.path.join(opt.out_dir, 'transl_data.npy'), np.array(transl_list))
 
 write_stream.release()
 write2d_stream.release()
